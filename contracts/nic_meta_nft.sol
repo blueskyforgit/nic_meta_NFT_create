@@ -11,7 +11,7 @@ contract NicMeta is ERC721Enumerable, Ownable {
 
     //是可以可以开始销售开关    function flipSaleActive() public onlyOwner  这个函数触发可以更改_isSaleActive
     bool public _isSaleActive = false;
-    // 盲盒是否结束，开箱就是true
+    // false = 盲盒阶段
     bool public _revealed = false;
 
     // Constants
@@ -24,14 +24,18 @@ contract NicMeta is ERC721Enumerable, Ownable {
     // 一次可以Mint多少个
     uint256 public maxMint = 1;
 
+    // 正式图片 IPFS URL
     string baseURI;
+    // 盲盒 IPFS URL
     string public notRevealedUri;
+    // IPFS 中得到的JSON文件？
     string public baseExtension = ".json";
 
     mapping(uint256 => string) private _tokenURIs;
 
-    constructor(string memory initBaseURI, string memory initNotRevealedUri)
     // Nic Meta合约名字  NM是代号
+    constructor(string memory initBaseURI, string memory initNotRevealedUri)
+    
         ERC721("Nic Meta", "NM")
     {
         setBaseURI(initBaseURI);
@@ -44,19 +48,25 @@ contract NicMeta is ERC721Enumerable, Ownable {
     // 完成后可以去opensea查看
     function mintNicMeta(uint256 tokenQuantity) public payable {
         require(
+            
             totalSupply() + tokenQuantity <= MAX_SUPPLY,
+            // 销售额将超过最大供应量
             "Sale would exceed max supply"
         );
+        // 销售必须是激活的，以制造NicMetas
         require(_isSaleActive, "Sale must be active to mint NicMetas");
         require(
             balanceOf(msg.sender) + tokenQuantity <= maxBalance,
+            // 销售额将超过最大余额
             "Sale would exceed max balance"
         );
         require(
             // 输入的Wei是否大于等于tokenQuantity * mintPrice
             tokenQuantity * mintPrice <= msg.value,
+            // 发送的eth不足
             "Not enough ether sent"
         );
+        // 一次只能铸造1枚代币
         require(tokenQuantity <= maxMint, "Can only mint 1 tokens at a time");
 
         _mintNicMeta(tokenQuantity);
@@ -110,10 +120,12 @@ contract NicMeta is ERC721Enumerable, Ownable {
     }
 
     //only owner
+    // 开启 Mint 功能
     function flipSaleActive() public onlyOwner {
         _isSaleActive = !_isSaleActive;
     }
 
+    // 关闭盲盒功能
     function flipReveal() public onlyOwner {
         _revealed = !_revealed;
     }
@@ -122,10 +134,11 @@ contract NicMeta is ERC721Enumerable, Ownable {
         mintPrice = _mintPrice;
     }
 
+    // 设定盲盒图片 IPFS URI   
     function setNotRevealedURI(string memory _notRevealedURI) public onlyOwner {
         notRevealedUri = _notRevealedURI;
     }
-
+    // 设定NFT正式图片 IPFS URI 最后要有斜线 /  结尾，因为是拼接起来很多图片
     function setBaseURI(string memory _newBaseURI) public onlyOwner {
         baseURI = _newBaseURI;
     }
@@ -145,6 +158,7 @@ contract NicMeta is ERC721Enumerable, Ownable {
         maxMint = _maxMint;
     }
 
+    // 提取合约中的金额
     function withdraw(address to) public onlyOwner {
         uint256 balance = address(this).balance;
         payable(to).transfer(balance);
